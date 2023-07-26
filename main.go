@@ -170,71 +170,71 @@ type TermFreqIndex map[string]TermFreq
 
 func main() {
 	indexPath := "index.json"
-	indexFile, err := os.ReadFile(indexPath)
+	if _, err := os.Stat(indexPath); err == nil {
+		indexFile, err := os.ReadFile(indexPath)
 
-	if err != nil {
-		fmt.Println("ERROR: could not open saved index", indexPath, err.Error())
-	}
+		if err != nil {
+			fmt.Println("ERROR: could not open saved index", indexPath, err.Error())
+		}
 
-	var termFreqIndex TermFreqIndex
-	json.Unmarshal(indexFile, &termFreqIndex)
+		var termFreqIndex TermFreqIndex
+		json.Unmarshal(indexFile, &termFreqIndex)
 
-	for path, tf := range termFreqIndex {
-		fmt.Println(path, "has", len(tf), "tokens")
-	}
-}
+		for path, tf := range termFreqIndex {
+			fmt.Println(path, "has", len(tf), "tokens")
+		}
+	} else {
+		dirPath := "content/craftinginterpreters/book/"
+		dirList, err := os.ReadDir(dirPath)
 
-func _main() {
-	dirPath := "content/craftinginterpreters/book/"
-	dirList, err := os.ReadDir(dirPath)
+		if err != nil {
+			println("ERROR: could not read directory", dirPath, err.Error())
+			os.Exit(1)
+		}
 
-	if err != nil {
-		println("ERROR: could not read directory", dirPath, err.Error())
-		os.Exit(1)
-	}
+		termFreqIndex := make(TermFreqIndex)
 
-	termFreqIndex := make(TermFreqIndex)
+		for _, dir := range dirList {
+			if !dir.IsDir() {
+				fullPath := dirPath + dir.Name()
 
-	for _, dir := range dirList {
-		if !dir.IsDir() {
-			fullPath := dirPath + dir.Name()
+				fmt.Println("Indexing", fullPath+"...")
 
-			fmt.Println("Indexing", fullPath+"...")
+				content, err := parseEntireFile(fullPath)
 
-			content, err := parseEntireFile(fullPath)
+				if err != nil {
+					// Log the error and continue
+					println("ERROR: could not read file", dir.Name(), ":", err.Error())
+					continue
+				}
 
-			if err != nil {
-				// Log the error and continue?
-				println("ERROR: could not read file", dir.Name(), ":", err.Error())
-			}
+				lexer := New(content)
+				tf := make(TermFreq)
 
-			lexer := New(content)
-			tf := make(TermFreq)
-
-			for tok := lexer.nextToken(); tok.tokenType != EOF; tok = lexer.nextToken() {
-				if tok.tokenType == WORD {
-					if _, ok := tf[tok.literal]; ok {
-						tf[tok.literal] += 1
-					} else {
-						tf[tok.literal] = 1
+				for tok := lexer.nextToken(); tok.tokenType != EOF; tok = lexer.nextToken() {
+					if tok.tokenType == WORD {
+						if _, ok := tf[tok.literal]; ok {
+							tf[tok.literal] += 1
+						} else {
+							tf[tok.literal] = 1
+						}
 					}
 				}
+
+				termFreqIndex[fullPath] = tf
 			}
-
-			termFreqIndex[fullPath] = tf
 		}
-	}
 
-	indexPath := "index.json"
-	fmt.Println("Saving", indexPath+"...")
-	file, _ := json.MarshalIndent(termFreqIndex, "", "")
+		fmt.Println("Saving", indexPath+"...")
+		file, _ := json.MarshalIndent(termFreqIndex, "", "")
 
-	err = os.WriteFile(indexPath, file, 0666)
-	if err != nil {
-		println("ERROR: could not write file", indexPath, ":", err.Error())
-	}
+		err = os.WriteFile(indexPath, file, 0666)
+		if err != nil {
+			println("ERROR: could not write file", indexPath, ":", err.Error())
+		}
 
-	for path, tf := range termFreqIndex {
-		fmt.Println(path, "has", len(tf), "tokens")
+		for path, tf := range termFreqIndex {
+			fmt.Println(path, "has", len(tf), "tokens")
+		}
 	}
 }
