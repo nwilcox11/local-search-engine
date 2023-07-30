@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -12,8 +13,10 @@ import (
 	"github.com/gomarkdown/markdown/parser"
 )
 
-// TODO(Nick): Do I even need the markdown parser?
-
+// TODO(Nick):
+// 1) Do I even need the markdown parser?
+// 2) Unmarshalling the json file is almost as slow as parsing and creating it.
+// is there something faster I can do?
 func parseEntireFile(filePath string) (string, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -168,22 +171,27 @@ func New(input string) *Lexer {
 type TermFreq map[string]int
 type TermFreqIndex map[string]TermFreq
 
+const indexPath = "index.json"
+
+// TODO:
+// Serve -> Serve up index.html file and any js that is needed.
+
+// Interface -->
+// go run index "pathtomarkdown"
+// go run search "index.json"
+// go run serve "should start html file server".
+
 func main() {
-	indexPath := "index.json"
-	if _, err := os.Stat(indexPath); err == nil {
-		indexFile, err := os.ReadFile(indexPath)
+  if len(os.Args) < 2 {
+    fmt.Println("Please enter a subCommand [index, search, serve]")
+    os.Exit(1)
+  }
 
-		if err != nil {
-			fmt.Println("ERROR: could not open saved index", indexPath, err.Error())
-		}
+	subCommand := os.Args[1]
 
-		var termFreqIndex TermFreqIndex
-		json.Unmarshal(indexFile, &termFreqIndex)
-
-		for path, tf := range termFreqIndex {
-			fmt.Println(path, "has", len(tf), "tokens")
-		}
-	} else {
+	switch subCommand {
+	case "index":
+		fmt.Println("index subCommand")
 		dirPath := "content/craftinginterpreters/book/"
 		dirList, err := os.ReadDir(dirPath)
 
@@ -232,9 +240,66 @@ func main() {
 		if err != nil {
 			println("ERROR: could not write file", indexPath, ":", err.Error())
 		}
+	case "search":
+    if len(os.Args) < 3 {
+      fmt.Println("Please enter a search term")
+      os.Exit(1)
+    }
 
-		for path, tf := range termFreqIndex {
-			fmt.Println(path, "has", len(tf), "tokens")
+    query := os.Args[2]
+		if _, err := os.Stat(indexPath); err == nil {
+			indexFile, err := os.ReadFile(indexPath)
+
+			if err != nil {
+				fmt.Println("ERROR: could not open saved index", indexPath, err.Error())
+			}
+
+			var termFreqIndex TermFreqIndex
+			json.Unmarshal(indexFile, &termFreqIndex)
+			corpusNumber := len(termFreqIndex)
+			queryLexer := New(query)
+
+			for tok := queryLexer.nextToken(); tok.tokenType != EOF; tok = queryLexer.nextToken() {
+				if tok.tokenType == WORD {
+					termDocCount := 0
+
+					// Count occurances of the term in the entire document corpus
+					for _, tf := range termFreqIndex {
+						for t := range tf {
+							if t == tok.literal {
+								termDocCount += 1
+							}
+						}
+					}
+
+					for doc, tf := range termFreqIndex {
+						termTotal := 0
+						termFreq := 0
+
+						for t, f := range tf {
+							termTotal += f
+
+							if t == tok.literal {
+								termFreq = f
+							}
+						}
+
+						idf := math.Log10(float64(corpusNumber) / (float64(termDocCount) + 1))
+						tf := float64(termFreq)
+						tfidf := float64(tf) * idf
+
+						fmt.Println(doc)
+						fmt.Println(" ", tok.literal, "=>", "tf:", tf)
+						fmt.Println(" ", tok.literal, "=>", "idf:", idf)
+						fmt.Println(" ", tok.literal, "=>", "tfidf:", tfidf)
+					}
+				}
+			}
 		}
+	case "serve":
+		fmt.Println("serve subCommand not implemented")
+	default:
+		fmt.Println("Sub-Command not supported")
+		os.Exit(1)
 	}
 }
