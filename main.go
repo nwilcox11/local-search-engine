@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -173,14 +174,6 @@ type TermFreqIndex map[string]TermFreq
 
 const indexPath = "index.json"
 
-// TODO:
-// Serve -> Serve up index.html file and any js that is needed.
-
-// Interface -->
-// go run index "pathtomarkdown"
-// go run search "index.json"
-// go run serve "should start html file server".
-
 func main() {
   if len(os.Args) < 2 {
     fmt.Println("Please enter a subCommand [index, search, serve]")
@@ -191,7 +184,6 @@ func main() {
 
 	switch subCommand {
 	case "index":
-		fmt.Println("index subCommand")
 		dirPath := "content/craftinginterpreters/book/"
 		dirList, err := os.ReadDir(dirPath)
 
@@ -297,7 +289,12 @@ func main() {
 			}
 		}
 	case "serve":
-		fmt.Println("serve subCommand not implemented")
+    http.Handle("/", http.FileServer(http.Dir("./static")))
+    fmt.Println("serving on port :3000")
+    err := http.ListenAndServe(":3000", nil)
+    if err != nil {
+      fmt.Println("Error running serve subCommand", err.Error())
+    }
 	default:
 		fmt.Println("Sub-Command not supported")
 		os.Exit(1)
