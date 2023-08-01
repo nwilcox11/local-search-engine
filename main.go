@@ -172,7 +172,125 @@ func New(input string) *Lexer {
 type TermFreq map[string]int
 type TermFreqIndex map[string]TermFreq
 
-const indexPath = "index.json"
+type application struct {
+	dirPath       string
+	indexPath     string
+	staticContent string
+}
+
+func (app *application) index() TermFreqIndex {
+	dirList, err := os.ReadDir(app.dirPath)
+
+	if err != nil {
+		println("ERROR: could not read directory", app.dirPath, err.Error())
+		os.Exit(1)
+	}
+
+	termFreqIndex := make(TermFreqIndex)
+
+	for _, dir := range dirList {
+		if !dir.IsDir() {
+			fullPath := app.dirPath + dir.Name()
+
+			fmt.Println("Indexing", fullPath+"...")
+
+			content, err := parseEntireFile(fullPath)
+
+			if err != nil {
+				// Log the error and continue
+				println("ERROR: could not read file", dir.Name(), ":", err.Error())
+				continue
+			}
+
+			lexer := New(content)
+			tf := make(TermFreq)
+
+			for tok := lexer.nextToken(); tok.tokenType != EOF; tok = lexer.nextToken() {
+				if tok.tokenType == WORD {
+					if _, ok := tf[tok.literal]; ok {
+						tf[tok.literal] += 1
+					} else {
+						tf[tok.literal] = 1
+					}
+				}
+			}
+
+			termFreqIndex[fullPath] = tf
+		}
+	}
+
+	fmt.Println("Saving", app.indexPath+"...")
+	file, _ := json.MarshalIndent(termFreqIndex, "", "")
+
+	err = os.WriteFile(app.indexPath, file, 0666)
+	if err != nil {
+		println("ERROR: could not write file", app.indexPath, ":", err.Error())
+	}
+
+	return termFreqIndex
+}
+
+func (app *application) search(query string) {
+	if _, err := os.Stat(app.indexPath); err == nil {
+		indexFile, err := os.ReadFile(app.indexPath)
+
+		if err != nil {
+			fmt.Println("ERROR: could not open saved index", app.indexPath, err.Error())
+		}
+
+		var termFreqIndex TermFreqIndex
+		json.Unmarshal(indexFile, &termFreqIndex)
+		corpusNumber := len(termFreqIndex)
+		queryLexer := New(query)
+
+		for tok := queryLexer.nextToken(); tok.tokenType != EOF; tok = queryLexer.nextToken() {
+			if tok.tokenType == WORD {
+				termDocCount := 0
+
+				// Count occurances of the term in the entire document corpus
+				for _, tf := range termFreqIndex {
+					for t := range tf {
+						if t == tok.literal {
+							termDocCount += 1
+						}
+					}
+				}
+
+				for doc, tf := range termFreqIndex {
+					termTotal := 0
+					termFreq := 0
+
+					for t, f := range tf {
+						termTotal += f
+
+						if t == tok.literal {
+							termFreq = f
+						}
+					}
+
+					idf := math.Log10(float64(corpusNumber) / (float64(termDocCount) + 1))
+					tf := float64(termFreq)
+					tfidf := float64(tf) * idf
+
+					fmt.Println(doc)
+					fmt.Println(" ", tok.literal, "=>", "tf:", tf)
+					fmt.Println(" ", tok.literal, "=>", "idf:", idf)
+					fmt.Println(" ", tok.literal, "=>", "tfidf:", tfidf)
+				}
+			}
+		}
+	}
+
+}
+
+func (app *application) serve() {
+  http.Handle("/", http.FileServer(http.Dir(app.staticContent)))
+  fmt.Println("serving on port :3000")
+  err := http.ListenAndServe(":3000", nil)
+  if err != nil {
+    fmt.Println("Error running serve subCommand", err.Error())
+  }
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -180,58 +298,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	app := &application{dirPath: "content/craftinginterpreters/book/", indexPath: "index.json", staticContent: "./static"}
 	subCommand := os.Args[1]
 
 	switch subCommand {
 	case "index":
-		dirPath := "content/craftinginterpreters/book/"
-		dirList, err := os.ReadDir(dirPath)
-
-		if err != nil {
-			println("ERROR: could not read directory", dirPath, err.Error())
-			os.Exit(1)
-		}
-
-		termFreqIndex := make(TermFreqIndex)
-
-		for _, dir := range dirList {
-			if !dir.IsDir() {
-				fullPath := dirPath + dir.Name()
-
-				fmt.Println("Indexing", fullPath+"...")
-
-				content, err := parseEntireFile(fullPath)
-
-				if err != nil {
-					// Log the error and continue
-					println("ERROR: could not read file", dir.Name(), ":", err.Error())
-					continue
-				}
-
-				lexer := New(content)
-				tf := make(TermFreq)
-
-				for tok := lexer.nextToken(); tok.tokenType != EOF; tok = lexer.nextToken() {
-					if tok.tokenType == WORD {
-						if _, ok := tf[tok.literal]; ok {
-							tf[tok.literal] += 1
-						} else {
-							tf[tok.literal] = 1
-						}
-					}
-				}
-
-				termFreqIndex[fullPath] = tf
-			}
-		}
-
-		fmt.Println("Saving", indexPath+"...")
-		file, _ := json.MarshalIndent(termFreqIndex, "", "")
-
-		err = os.WriteFile(indexPath, file, 0666)
-		if err != nil {
-			println("ERROR: could not write file", indexPath, ":", err.Error())
-		}
+		app.index()
 	case "search":
 		if len(os.Args) < 3 {
 			fmt.Println("Please enter a search term")
@@ -239,62 +311,9 @@ func main() {
 		}
 
 		query := os.Args[2]
-		if _, err := os.Stat(indexPath); err == nil {
-			indexFile, err := os.ReadFile(indexPath)
-
-			if err != nil {
-				fmt.Println("ERROR: could not open saved index", indexPath, err.Error())
-			}
-
-			var termFreqIndex TermFreqIndex
-			json.Unmarshal(indexFile, &termFreqIndex)
-			corpusNumber := len(termFreqIndex)
-			queryLexer := New(query)
-
-			for tok := queryLexer.nextToken(); tok.tokenType != EOF; tok = queryLexer.nextToken() {
-				if tok.tokenType == WORD {
-					termDocCount := 0
-
-					// Count occurances of the term in the entire document corpus
-					for _, tf := range termFreqIndex {
-						for t := range tf {
-							if t == tok.literal {
-								termDocCount += 1
-							}
-						}
-					}
-
-					for doc, tf := range termFreqIndex {
-						termTotal := 0
-						termFreq := 0
-
-						for t, f := range tf {
-							termTotal += f
-
-							if t == tok.literal {
-								termFreq = f
-							}
-						}
-
-						idf := math.Log10(float64(corpusNumber) / (float64(termDocCount) + 1))
-						tf := float64(termFreq)
-						tfidf := float64(tf) * idf
-
-						fmt.Println(doc)
-						fmt.Println(" ", tok.literal, "=>", "tf:", tf)
-						fmt.Println(" ", tok.literal, "=>", "idf:", idf)
-						fmt.Println(" ", tok.literal, "=>", "tfidf:", tfidf)
-					}
-				}
-			}
-		}
+		app.search(query)
 	case "serve":
-		http.Handle("/", http.FileServer(http.Dir("./static")))
-		fmt.Println("serving on port :3000")
-		err := http.ListenAndServe(":3000", nil)
-		if err != nil {
-			fmt.Println("Error running serve subCommand", err.Error())
-		}
+    app.serve()
 	default:
 		fmt.Println("Sub-Command not supported")
 		os.Exit(1)
