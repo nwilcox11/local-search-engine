@@ -175,10 +175,10 @@ type TermFreqIndex map[string]TermFreq
 const indexPath = "index.json"
 
 func main() {
-  if len(os.Args) < 2 {
-    fmt.Println("Please enter a subCommand [index, search, serve]")
-    os.Exit(1)
-  }
+	if len(os.Args) < 2 {
+		fmt.Println("Please enter a subCommand [index, search, serve]")
+		os.Exit(1)
+	}
 
 	subCommand := os.Args[1]
 
@@ -233,12 +233,12 @@ func main() {
 			println("ERROR: could not write file", indexPath, ":", err.Error())
 		}
 	case "search":
-    if len(os.Args) < 3 {
-      fmt.Println("Please enter a search term")
-      os.Exit(1)
-    }
+		if len(os.Args) < 3 {
+			fmt.Println("Please enter a search term")
+			os.Exit(1)
+		}
 
-    query := os.Args[2]
+		query := os.Args[2]
 		if _, err := os.Stat(indexPath); err == nil {
 			indexFile, err := os.ReadFile(indexPath)
 
@@ -289,12 +289,12 @@ func main() {
 			}
 		}
 	case "serve":
-    http.Handle("/", http.FileServer(http.Dir("./static")))
-    fmt.Println("serving on port :3000")
-    err := http.ListenAndServe(":3000", nil)
-    if err != nil {
-      fmt.Println("Error running serve subCommand", err.Error())
-    }
+		http.Handle("/", http.FileServer(http.Dir("./static")))
+		fmt.Println("serving on port :3000")
+		err := http.ListenAndServe(":3000", nil)
+		if err != nil {
+			fmt.Println("Error running serve subCommand", err.Error())
+		}
 	default:
 		fmt.Println("Sub-Command not supported")
 		os.Exit(1)

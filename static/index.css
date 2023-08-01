@@ -1,9 +1,13 @@
 :root {
-  --maxWidth: 980px;
+  --maxWidth: 720px;
   --bold: 500;
+  --medi: 400;
   --light: 300;
+  --primary-background: #191A23;
+  --focus-color: #6c79ff;
+  --text-color: rgb(210, 211, 224);
+  --input-background: rgb(44, 45, 60);
   --primary-foreground: #000;
-  --primary-background: #fff;
   --highlight-alert: #ff0080;
   --highlight-violet: #7928ca;
   --highlight-cyan: #79ffe1;
@@ -20,8 +24,60 @@ body {
   padding: 0;
   scroll-behavior: smooth;
   text-rendering: optimizeSpeed;
-  color: var(--primary-foreground);
+  color: var(--text-color);
+  background-color: var(--primary-background);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
     'Segoe UI Symbol';
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: var(--maxWidth);
+}
+
+@media(max-width: 720px) {
+  main {
+    padding: 0 15px 0 15px;
+  }
+}
+
+main > h1 {
+  font-size: 3em;
+  font-weight: var(--medi);
+  user-select: none;
+}
+
+.input-main--wrapper {
+  background-color: var(--input-background);
+  border: 1px solid var(--input-background);
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+  box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px;
+  transition-property: border-color;
+  transition-timing-function: ease-in-out;
+  transition-duration: 0.10s;
+}
+
+.input-main--wrapper:focus-within {
+  border: 1px solid var(--focus-color);
+}
+
+.input-main {
+  width: 100%;
+  border-radius: 4px;
+  outline: none;
+  border: none;
+  font-size: 1em;
+  font-weight: var(--light);
+  color: var(--text-color);
+  background-color: transparent;
 }
