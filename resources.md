@@ -40,9 +40,17 @@ is a numerical statistic that is intended to reflect how important a word is to 
     ```
 
     ##### Tf-idf
+    - **This value increases proportionally to the number of times a word appears**
+    in the document and is offset by the number of docs in the corpus that contain the word.
+        - This helps to adjust for the fact that some words appear more frequency.
 
+    - We are going to calculate this per doc in the corpus.
     ```
-    tfidf(t, d, D) = tf(t, d) * idf(t, D)
+    tfidf(term, d1, D) = tf(t, d1) * idf(t, D)
+    tfidf(term, d2, D) = tf(t, d2) * idf(t, D)
     ```
+
+    ##### What are we trying to to?
+    - Build a ranking function that is computed by summing the tf-idf for each query term.
 
 2) **[Crafting Interpreters](https://github.com/munificent/craftinginterpreters/tree/master)** The book we are going use in the search engine ranking.
