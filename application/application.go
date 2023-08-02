@@ -1,16 +1,16 @@
 package application
 
 import (
-  "bytes"
-  "fmt"
-  "net/http"
-  "os"
-  "sort"
-  "math"
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"math"
+	"net/http"
+	"os"
+	"sort"
 
-  "gosearch/lexer"
-  "gosearch/token"
+	"gosearch/lexer"
+	"gosearch/token"
 
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/parser"
@@ -92,7 +92,6 @@ func logTopTerms(filePath string, stats []TermFreqLog, threshold int) {
 	}
 }
 
-
 func (app *Application) Index() TermFreqIndex {
 	dirList, err := os.ReadDir(app.DirPath)
 
@@ -145,18 +144,31 @@ func (app *Application) Index() TermFreqIndex {
 	return termFreqIndex
 }
 
-func (app *Application) Search(query string) {
+type tfidfTermDoc struct {
+	term  string
+	doc   string
+	tf    float64
+	idf   float64
+	tfidf float64
+}
+type tfidfIndexResult = map[string][]tfidfTermDoc
+
+func (app *Application) Search(query string) (tfidfIndexResult, error) {
+	var out tfidfIndexResult
 	if _, err := os.Stat(app.IndexPath); err == nil {
 		indexFile, err := os.ReadFile(app.IndexPath)
 
 		if err != nil {
 			fmt.Println("ERROR: could not open saved index", app.IndexPath, err.Error())
+			os.Exit(1)
+			return nil, err
 		}
 
 		var termFreqIndex TermFreqIndex
 		json.Unmarshal(indexFile, &termFreqIndex)
 		corpusNumber := len(termFreqIndex)
 		queryLexer := lexer.New(query)
+		out = make(tfidfIndexResult)
 
 		for tok := queryLexer.NextToken(); tok.TokenType != token.EOF; tok = queryLexer.NextToken() {
 			if tok.TokenType == token.WORD {
@@ -170,6 +182,13 @@ func (app *Application) Search(query string) {
 						}
 					}
 				}
+
+				// Skip WORD if it is not found in the document.
+				if termDocCount == 0 {
+					continue
+				}
+
+				out[tok.Literal] = make([]tfidfTermDoc, 0, corpusNumber)
 
 				for doc, tf := range termFreqIndex {
 					termTotal := 0
@@ -187,22 +206,26 @@ func (app *Application) Search(query string) {
 					tf := float64(termFreq)
 					tfidf := float64(tf) * idf
 
-					fmt.Println(doc)
-					fmt.Println(" ", tok.Literal, "=>", "tf:", tf)
-					fmt.Println(" ", tok.Literal, "=>", "idf:", idf)
-					fmt.Println(" ", tok.Literal, "=>", "tfidf:", tfidf)
+					if _, ok := out[tok.Literal]; ok {
+						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{doc: doc, idf: idf, tfidf: tfidf, term: tok.Literal})
+					}
 				}
 			}
+
+			sort.Slice(out[tok.Literal], func(i, j int) bool {
+				return out[tok.Literal][i].tfidf > out[tok.Literal][j].tfidf
+			})
+			out[tok.Literal] = out[tok.Literal]
 		}
 	}
-
+	return out, nil
 }
 
 func (app *Application) Serve() {
-  http.Handle("/", http.FileServer(http.Dir(app.StaticContent)))
-  fmt.Println("serving on port :3000")
-  err := http.ListenAndServe(":3000", nil)
-  if err != nil {
-    fmt.Println("Error running serve subCommand", err.Error())
-  }
+	http.Handle("/", http.FileServer(http.Dir(app.StaticContent)))
+	fmt.Println("serving on port :3000")
+	err := http.ListenAndServe(":3000", nil)
+	if err != nil {
+		fmt.Println("Error running serve subCommand", err.Error())
+	}
 }

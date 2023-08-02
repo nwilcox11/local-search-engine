@@ -25,7 +25,20 @@ func main() {
 		}
 
 		query := os.Args[2]
-		app.Search(query)
+
+    result, err := app.Search(query)
+
+    if err != nil {
+      fmt.Println(err.Error())
+    }
+
+    for k, v := range result {
+      fmt.Println(k)
+      for _, v := range v {
+        fmt.Println(v)
+      }
+    }
+
 	case "serve":
 		app.Serve()
 	default:
