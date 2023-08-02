@@ -215,7 +215,6 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 			sort.Slice(out[tok.Literal], func(i, j int) bool {
 				return out[tok.Literal][i].tfidf > out[tok.Literal][j].tfidf
 			})
-			out[tok.Literal] = out[tok.Literal]
 		}
 	}
 	return out, nil
