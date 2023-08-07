@@ -223,21 +223,21 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 func (app *Application) Serve() {
 	http.Handle("/", http.FileServer(http.Dir(app.StaticContent)))
 
+  http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+    q := r.URL.Query().Get("q")
+
+    result, _ := app.Search(q)
+    body, _ := json.Marshal(result)
+
+    w.Header().Add("Content-Type", "application/json")
+
+    w.Write(body)
+  })
+
 	fmt.Println("serving on port :3000")
 	err := http.ListenAndServe(":3000", nil)
 
 	if err != nil {
 		fmt.Println("Error running serve subCommand", err.Error())
 	}
-
-	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query().Get("q")
-
-		result, _ := app.Search(q)
-		body, _ := json.Marshal(result)
-
-		w.Header().Add("Content-Type", "application/json")
-
-		w.Write(body)
-	})
 }

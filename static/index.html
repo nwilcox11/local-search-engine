@@ -11,8 +11,11 @@
     <main>
       <h1>Crafting Interpreters</h1>
       <div class="input-main--wrapper">
-        <input class="input-main" placeholder="Search..." />
+        <form id="search-form">
+          <input id="search" class="input-main" placeholder="Search..." autocomplete="off" />
+        </form>
       </div>
+      <ul id="result-content" class="result-content"></ul>
     </main>
   </body>
   <script async type="module" src="index.js"></script>

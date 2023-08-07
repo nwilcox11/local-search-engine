@@ -1,3 +1,5 @@
 content/
 index.json
 gosearch
+
+static/package.json
