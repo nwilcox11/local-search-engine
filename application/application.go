@@ -145,11 +145,11 @@ func (app *Application) Index() TermFreqIndex {
 }
 
 type tfidfTermDoc struct {
-	term  string
-	doc   string
+	Term  string `json:"term"`
+	Doc   string `json:"doc"`
 	tf    float64
 	idf   float64
-	tfidf float64
+	Tfidf float64 `json:"tfidf"`
 }
 type tfidfIndexResult = map[string][]tfidfTermDoc
 
@@ -207,13 +207,13 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 					tfidf := float64(tf) * idf
 
 					if _, ok := out[tok.Literal]; ok {
-						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{doc: doc, idf: idf, tfidf: tfidf, term: tok.Literal})
+						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{Doc: doc, idf: idf, Tfidf: tfidf, Term: tok.Literal})
 					}
 				}
 			}
 
 			sort.Slice(out[tok.Literal], func(i, j int) bool {
-				return out[tok.Literal][i].tfidf > out[tok.Literal][j].tfidf
+				return out[tok.Literal][i].Tfidf > out[tok.Literal][j].Tfidf
 			})
 		}
 	}
@@ -222,9 +222,22 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 
 func (app *Application) Serve() {
 	http.Handle("/", http.FileServer(http.Dir(app.StaticContent)))
+
 	fmt.Println("serving on port :3000")
 	err := http.ListenAndServe(":3000", nil)
+
 	if err != nil {
 		fmt.Println("Error running serve subCommand", err.Error())
 	}
+
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query().Get("q")
+
+		result, _ := app.Search(q)
+		body, _ := json.Marshal(result)
+
+		w.Header().Add("Content-Type", "application/json")
+
+		w.Write(body)
+	})
 }
