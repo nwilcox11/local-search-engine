@@ -66,9 +66,10 @@ func parseEntireFile(filePath string) (string, error) {
 }
 
 const domain = "craftinginterpreters.com/"
-func toHtmlType (path string) string {
-  splitPath := strings.Split(path, ".");
-  return splitPath[0] + ".html"
+
+func toHtmlType(path string) string {
+	splitPath := strings.Split(path, ".")
+	return splitPath[0] + ".html"
 }
 
 func (app *Application) Index() TermFreqIndex {
@@ -128,7 +129,7 @@ type tfidfTermDoc struct {
 	Term  string `json:"term"`
 	Doc   string `json:"doc"`
 	tf    float64
-	idf   float64
+	Idf   float64 `json:"idf"`
 	Tfidf float64 `json:"tfidf"`
 }
 type tfidfIndexResult = map[string][]tfidfTermDoc
@@ -186,8 +187,8 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 					tf := float64(termFreq)
 					tfidf := float64(tf) * idf
 
-					if _, ok := out[tok.Literal]; ok {
-						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{Doc: doc, idf: idf, Tfidf: tfidf, Term: tok.Literal})
+					if _, ok := out[tok.Literal]; ok && tfidf > 0 {
+						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{Doc: doc, Idf: idf, Tfidf: tfidf, Term: tok.Literal})
 					}
 				}
 			}
