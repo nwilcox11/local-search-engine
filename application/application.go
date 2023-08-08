@@ -17,8 +17,14 @@ import (
 	"github.com/gomarkdown/markdown/parser"
 )
 
+type TermFreqIndex map[string]*TermFreqStruct
+
 type TermFreq map[string]int
-type TermFreqIndex map[string]TermFreq
+
+type TermFreqStruct struct {
+	Meta string
+	Idx  TermFreq
+}
 
 type Application struct {
 	DirPath       string
@@ -110,7 +116,8 @@ func (app *Application) Index() TermFreqIndex {
 				}
 			}
 
-			termFreqIndex[indexKey] = tf
+			termFreqContainer := &TermFreqStruct{Meta: content[:30], Idx: tf}
+			termFreqIndex[indexKey] = termFreqContainer
 		}
 	}
 
@@ -157,7 +164,7 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 
 				// Count occurances of the term in the entire document corpus
 				for _, tf := range termFreqIndex {
-					for t := range tf {
+					for t := range tf.Idx {
 						if t == tok.Literal {
 							termDocCount += 1
 						}
@@ -175,7 +182,7 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 					termTotal := 0
 					termFreq := 0
 
-					for t, f := range tf {
+					for t, f := range tf.Idx {
 						termTotal += f
 
 						if t == tok.Literal {
