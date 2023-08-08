@@ -38,6 +38,15 @@ class App {
     this.doSearch = this.#doSearch.bind(this);
   }
 
+  // TODO:
+  // Remove domain.
+  // Replace dashes with spaces
+  // Remove file type
+  // Capitalize each word?
+  #processDocTitle(doc) {
+    return doc;
+  }
+
   #renderResultList(content) {
     if (!content) return;
     const docItems = [];
@@ -46,11 +55,13 @@ class App {
     for (const [_, docs] of Object.entries(content)) {
       for (const doc of docs) {
         const listItem = `
-          <li class="result-content--item">
-            <span class="result-content--item-doc">${doc.doc}</span>
-            <span class="result-content--item-carrot"></span>
-            <span class="result-content--item-rel">${doc.tfidf}</span>
-          </li>
+          <a href=https://${doc.doc} target=_blank>
+            <li class="result-content--item">
+              <span class="result-content--item-doc">${this.#processDocTitle(doc.doc)}</span>
+              <span class="result-content--item-carrot"></span>
+              <span class="result-content--item-rel">${doc.tfidf}</span>
+            </li>
+          </a>
         `
         docItems.push(listItem);
       }

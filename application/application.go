@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 
 	"gosearch/lexer"
 	"gosearch/token"
@@ -64,32 +65,10 @@ func parseEntireFile(filePath string) (string, error) {
 	return buffer.String(), nil
 }
 
-func getStats(collection TermFreq) []TermFreqLog {
-	out := make([]TermFreqLog, 0, len(collection))
-	for t, f := range collection {
-		out = append(out, TermFreqLog{t, f})
-	}
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].freq > out[j].freq
-	})
-
-	return out
-}
-
-type TermFreqLog struct {
-	term string
-	freq int
-}
-
-func logTopTerms(filePath string, stats []TermFreqLog, threshold int) {
-	fmt.Println(filePath)
-	for i, tf := range stats {
-		if i < threshold {
-			fmt.Println("  ", tf.term, "=>", tf.freq)
-		} else {
-			break
-		}
-	}
+const domain = "craftinginterpreters.com/"
+func toHtmlType (path string) string {
+  splitPath := strings.Split(path, ".");
+  return splitPath[0] + ".html"
 }
 
 func (app *Application) Index() TermFreqIndex {
@@ -105,6 +84,7 @@ func (app *Application) Index() TermFreqIndex {
 	for _, dir := range dirList {
 		if !dir.IsDir() {
 			fullPath := app.DirPath + dir.Name()
+			indexKey := domain + toHtmlType(dir.Name())
 
 			fmt.Println("Indexing", fullPath+"...")
 
@@ -129,7 +109,7 @@ func (app *Application) Index() TermFreqIndex {
 				}
 			}
 
-			termFreqIndex[fullPath] = tf
+			termFreqIndex[indexKey] = tf
 		}
 	}
 
@@ -223,16 +203,16 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 func (app *Application) Serve() {
 	http.Handle("/", http.FileServer(http.Dir(app.StaticContent)))
 
-  http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
-    q := r.URL.Query().Get("q")
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query().Get("q")
 
-    result, _ := app.Search(q)
-    body, _ := json.Marshal(result)
+		result, _ := app.Search(q)
+		body, _ := json.Marshal(result)
 
-    w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Type", "application/json")
 
-    w.Write(body)
-  })
+		w.Write(body)
+	})
 
 	fmt.Println("serving on port :3000")
 	err := http.ListenAndServe(":3000", nil)
