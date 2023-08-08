@@ -32,6 +32,10 @@ type Application struct {
 	StaticContent string
 }
 
+const smallestDocLength = 34
+const nextSmallestDocLength = 75
+const domain = "craftinginterpreters.com/"
+
 // TODO(Nick):
 // 1) Do I even need the markdown parser?
 // 2) Unmarshalling the json file is almost as slow as parsing and creating it.
@@ -71,11 +75,24 @@ func parseEntireFile(filePath string) (string, error) {
 	return buffer.String(), nil
 }
 
-const domain = "craftinginterpreters.com/"
-
 func toHtmlType(path string) string {
 	splitPath := strings.Split(path, ".")
 	return splitPath[0] + ".html"
+}
+
+// lol
+func contentPreview(content string) string {
+	l := len(content)
+  var out string
+	if l <= smallestDocLength+1 {
+		out = content[:smallestDocLength]
+	} else if l <= nextSmallestDocLength {
+		out = content[:nextSmallestDocLength-5]
+	} else {
+    out = content[:200]
+  }
+
+	return strings.ReplaceAll(out, "\n", " ")
 }
 
 func (app *Application) Index() TermFreqIndex {
@@ -116,7 +133,7 @@ func (app *Application) Index() TermFreqIndex {
 				}
 			}
 
-			termFreqContainer := &TermFreqStruct{Meta: content[:30], Idx: tf}
+			termFreqContainer := &TermFreqStruct{Meta: contentPreview(content), Idx: tf}
 			termFreqIndex[indexKey] = termFreqContainer
 		}
 	}
@@ -138,6 +155,7 @@ type tfidfTermDoc struct {
 	tf    float64
 	Idf   float64 `json:"idf"`
 	Tfidf float64 `json:"tfidf"`
+	Meta  string
 }
 type tfidfIndexResult = map[string][]tfidfTermDoc
 
@@ -178,11 +196,11 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 
 				out[tok.Literal] = make([]tfidfTermDoc, 0, corpusNumber)
 
-				for doc, tf := range termFreqIndex {
+				for doc, tfs := range termFreqIndex {
 					termTotal := 0
 					termFreq := 0
 
-					for t, f := range tf.Idx {
+					for t, f := range tfs.Idx {
 						termTotal += f
 
 						if t == tok.Literal {
@@ -195,7 +213,7 @@ func (app *Application) Search(query string) (tfidfIndexResult, error) {
 					tfidf := float64(tf) * idf
 
 					if _, ok := out[tok.Literal]; ok && tfidf > 0 {
-						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{Doc: doc, Idf: idf, Tfidf: tfidf, Term: tok.Literal})
+						out[tok.Literal] = append(out[tok.Literal], tfidfTermDoc{Doc: doc, Meta: tfs.Meta, Idf: idf, Tfidf: tfidf, Term: tok.Literal})
 					}
 				}
 			}
