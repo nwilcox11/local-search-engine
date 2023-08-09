@@ -16,6 +16,8 @@
   --text-result-color: rgb(238, 239, 252);
   --sub-text-color: rgb(133, 134, 153);
   --border-color: 1px solid rgb(44, 45, 60);
+
+  --focus-box-shadow: rgb(51, 53, 103) 0px 0px 0px 1px inset;
 }
 
 ul, li, a, h1, p {
@@ -36,7 +38,6 @@ html, body {
 body {
   margin: 0;
   padding: 0;
-  scroll-behavior: smooth;
   text-rendering: optimizeSpeed;
   color: var(--text-color);
   background-color: var(--primary-background);
@@ -59,6 +60,7 @@ main {
   overflow: auto;
   position: relative;
   padding: 25px;
+  scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {
@@ -151,6 +153,11 @@ h1 {
 
 .result-content--card:hover {
   background-color: rgb(28, 29, 42);
+}
+
+a:focus {
+  box-shadow: var(--focus-box-shadow);
+  border-radius: 6px;
 }
 
 .result-content--card-doc {

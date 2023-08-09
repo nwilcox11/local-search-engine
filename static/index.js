@@ -1,4 +1,8 @@
 const SearchEndpoint = "http://localhost:3000/search?q="
+const N = 78;
+const P = 80;
+const S = 83;
+const H = 72;
 
 function processFloat(float) {
   return float.toFixed(3);
@@ -16,7 +20,14 @@ class App {
   #formHandle = document.getElementById("search-form");
   #inputHandle = document.getElementById("search");
   #contentHandle = document.getElementById("result-content");
+  #bodyHandle = document.getElementById("app");
+
   #content = undefined;
+  #anchors = undefined;
+
+  #state = {
+    navigatedTo: 0,
+  };
 
   constructor() {
     this.#bindEventListeners();
@@ -24,23 +35,31 @@ class App {
 
   bootstrap() {
     this.#formHandle.addEventListener("submit", this.doSearch);
+    window.addEventListener("keydown", (e) => { this.keyboardAction(e) });
   }
 
   async #doSearch(e) {
     e.preventDefault();
 
     const query = encodeURI(this.#inputHandle.value);
+    if (!query) return;
 
     try {
       const resp = await fetch(`${SearchEndpoint}${query}`);
-      const content = await resp.json();
+
+      // TODO: Currently the server returns 204 on empty search results
+      // Lets change this to something useful.
+      if (resp.status === 204) return;
+
+      const jsonResp = await resp.json();
 
       if (this.#content) {
         this.#clearResultList();
       }
 
-      this.#renderResultList(content);
-      this.#content = content;
+      this.#renderResultList(jsonResp);
+      this.#content = jsonResp;
+      this.#anchors = Array.from(this.#contentHandle.childNodes).filter(node => node.nodeName === "A");
     } catch (err) {
       console.log(err)
     }
@@ -48,6 +67,48 @@ class App {
 
   #bindEventListeners() {
     this.doSearch = this.#doSearch.bind(this);
+    this.keyboardAction = this.#keyboardAction.bind(this);
+  }
+
+  #keyboardAction(e) {
+    if (this.#content) {
+      this.#navigation(e);
+    }
+
+    if (e.ctrlKey && e.keyCode === S) {
+      this.#inputHandle.focus();
+    }
+
+    if (e.ctrlKey && e.keyCode === H) {
+      // TODO: Show help dialog
+      console.log("show help dialog");
+    }
+
+  }
+
+  #navigation(e) {
+    const navigationStart = document.activeElement === this.#bodyHandle ||
+      document.activeElement === this.#inputHandle
+
+    if (e.ctrlKey && e.keyCode === N) {
+      if (navigationStart) {
+        this.#state.navigatedTo = 0;
+        this.#anchors[this.#state.navigatedTo].focus();
+      } else {
+        this.#state.navigatedTo = (this.#state.navigatedTo + 1) % this.#anchors.length;
+        this.#anchors[this.#state.navigatedTo].focus();
+      }
+    }
+
+    if (e.ctrlKey && e.keyCode === P) {
+      if (navigationStart) {
+        this.#state.navigatedTo = this.#anchors.length - 1;
+        this.#anchors[this.#state.navigatedTo].focus();
+      } else {
+        this.#state.navigatedTo = (this.#state.navigatedTo - 1 + this.#anchors.length) % this.#anchors.length;
+        this.#anchors[this.#state.navigatedTo].focus();
+      }
+    }
   }
 
   #renderResultList(content) {
@@ -96,6 +157,8 @@ class App {
     while (this.#contentHandle.firstChild) {
       this.#contentHandle.removeChild(this.#contentHandle.firstChild);
     }
+    this.#anchors = undefined;
+    this.#content = undefined;
   }
 }
 

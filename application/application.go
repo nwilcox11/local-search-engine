@@ -233,6 +233,13 @@ func (app *Application) Serve() {
 		q := r.URL.Query().Get("q")
 
 		result, _ := app.Search(q)
+
+    // TODO: lets do something else here.
+    if len(result) == 0 {
+      w.Header().Add("Content-Type", "application/json")
+      w.WriteHeader(204)
+    }
+
 		body, _ := json.Marshal(result)
 
 		w.Header().Add("Content-Type", "application/json")
