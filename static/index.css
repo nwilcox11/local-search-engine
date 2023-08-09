@@ -52,8 +52,8 @@ body {
 }
 
 main {
+  align-items: baseline;
   display: flex;
-  flex-direction: column;
   gap: 25px;
   width: 100%;
   overflow: auto;
@@ -85,17 +85,14 @@ main {
 }
 
 .search {
-  align-items: center;
   display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: var(--maxWidth);
   gap: 12px;
 }
-
-.search > h1 {
-  font-size: 16px;
-  font-weight: var(--medi);
-  user-select: none;
+h1 {
+  align-self: baseline;
 }
 
 .search > form {
@@ -103,7 +100,6 @@ main {
 }
 
 .search-results {
-  width: fit-content;
   max-width: var(--maxWidth);
 }
 
@@ -140,18 +136,17 @@ main {
   width: 100%;
   max-width: var(--maxWidth);
   height: 100%;
-  padding-bottom: 50px;
   position: relative;
   overflow: auto;
   gap: 6px;
 }
 
 .result-content--card {
-  /*border-radius: 16px 58px 58px 16px;*/
-  border-radius: 16px;
+  border-radius: 6px;
   display: flex;
-  padding: 10px 10px 10px 10px;
+  padding: 20px 20px 20px 20px;
   cursor: pointer;
+  justify-content: space-between;
 }
 
 .result-content--card:hover {
@@ -180,7 +175,7 @@ main {
 
 .chip {
   border: var(--border-color);
-  border-radius: 48px;
+  border-radius: 6px;
   background-color: transparent;
   display: flex;
   align-items: center;
@@ -203,9 +198,9 @@ main {
 }
 
 .chip-group {
-  align-self: end;
   display: flex;
   gap: 6px;
+  align-items: flex-end;
 }
 
 .idf {

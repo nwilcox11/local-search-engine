@@ -73,10 +73,10 @@ class App {
           <div class="result-content-group">
             <span class="result-content--card-doc">${processDocTitle(doc.doc)}</span>
             <p class="result-content--card-meta">${doc.meta}</p>
-            <div class="chip-group">
-              ${this.#chip(processFloat(doc.idf), "idf")}
-              ${this.#chip(processFloat(doc.tfidf), "tfidf")}
-            </div>
+          </div>
+          <div class="chip-group">
+            ${this.#chip(processFloat(doc.idf), "idf")}
+            ${this.#chip(processFloat(doc.tfidf), "tfidf")}
           </div>
         </li>
       </a>
