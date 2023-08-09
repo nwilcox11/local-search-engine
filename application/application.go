@@ -83,16 +83,16 @@ func toHtmlType(path string) string {
 // lol
 func contentPreview(content string) string {
 	l := len(content)
-  var out string
+	var out string
 	if l <= smallestDocLength+1 {
 		out = content[:smallestDocLength]
 	} else if l <= nextSmallestDocLength {
 		out = content[:nextSmallestDocLength-5]
 	} else {
-    out = content[:200]
-  }
+		out = content[:200]
+	}
 
-	return strings.ReplaceAll(out, "\n", " ")
+	return strings.TrimRight(strings.ReplaceAll(out, "\n", " "), " ") + "..."
 }
 
 func (app *Application) Index() TermFreqIndex {
@@ -155,7 +155,7 @@ type tfidfTermDoc struct {
 	tf    float64
 	Idf   float64 `json:"idf"`
 	Tfidf float64 `json:"tfidf"`
-	Meta  string
+	Meta  string  `json:"meta"`
 }
 type tfidfIndexResult = map[string][]tfidfTermDoc
 

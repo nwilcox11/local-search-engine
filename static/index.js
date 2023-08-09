@@ -1,5 +1,17 @@
 const SearchEndpoint = "http://localhost:3000/search?q="
 
+function processFloat(float) {
+  return float.toFixed(3);
+}
+
+function processDocTitle(doc) {
+  const removeDomain = doc.split("/");
+  const removeFiletype = removeDomain[1].split(".");
+  return removeFiletype[0].replaceAll("-", " ")
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.substring(1)).join(" ");
+}
+
 class App {
   #formHandle = document.getElementById("search-form");
   #inputHandle = document.getElementById("search");
@@ -38,15 +50,6 @@ class App {
     this.doSearch = this.#doSearch.bind(this);
   }
 
-  // TODO:
-  // Remove domain.
-  // Replace dashes with spaces
-  // Remove file type
-  // Capitalize each word?
-  #processDocTitle(doc) {
-    return doc;
-  }
-
   #renderResultList(content) {
     if (!content) return;
     const docItems = [];
@@ -54,22 +57,39 @@ class App {
 
     for (const [_, docs] of Object.entries(content)) {
       for (const doc of docs) {
-        const listItem = `
-          <a href=https://${doc.doc} target=_blank>
-            <li class="result-content--item">
-              <span class="result-content--item-doc">${this.#processDocTitle(doc.doc)}</span>
-              <span class="result-content--item-carrot"></span>
-              <span class="result-content--item-rel">${doc.tfidf}</span>
-            </li>
-          </a>
-        `
-        docItems.push(listItem);
+        docItems.push(this.#resultCard(doc));
       }
 
       fragment.innerHTML = docItems.join("");
     }
 
     this.#contentHandle.appendChild(fragment.content);
+  }
+
+  #resultCard(doc) {
+    return `
+      <a href=https://${doc.doc} target=_blank>
+        <li class="result-content--card">
+          <div class="result-content-group">
+            <span class="result-content--card-doc">${processDocTitle(doc.doc)}</span>
+            <p class="result-content--card-meta">${doc.meta}</p>
+            <div class="chip-group">
+              ${this.#chip(processFloat(doc.idf), "idf")}
+              ${this.#chip(processFloat(doc.tfidf), "tfidf")}
+            </div>
+          </div>
+        </li>
+      </a>
+    `
+  }
+
+  #chip(text, kind) {
+    return `
+      <span class="chip">
+        <span class="chip-kind ${kind}"></span>
+        <span class="chip-text">${text}</span>
+      </span>
+    `
   }
 
   #clearResultList() {
