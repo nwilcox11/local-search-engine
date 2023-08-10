@@ -15,12 +15,11 @@
   --text-color: rgb(210, 211, 224);
   --text-result-color: rgb(238, 239, 252);
   --sub-text-color: rgb(133, 134, 153);
-  --border-color: 1px solid rgb(44, 45, 60);
-
+  --border-color: 1px solid rgb(53, 56, 74);
   --focus-box-shadow: rgb(51, 53, 103) 0px 0px 0px 1px inset;
 }
 
-ul, li, a, h1, p {
+ul, li, a, h1, p, dialog, kbd {
   all: unset
 }
 
@@ -34,11 +33,10 @@ html, body {
   height: 100%;
 }
 
-
 body {
   margin: 0;
   padding: 0;
-  text-rendering: optimizeSpeed;
+  text-rendering: optimizeLegibility;
   color: var(--text-color);
   background-color: var(--primary-background);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
@@ -53,14 +51,24 @@ body {
 }
 
 main {
-  align-items: baseline;
   display: flex;
   gap: 25px;
   width: 100%;
   overflow: auto;
-  position: relative;
+  position: absolute;
   padding: 25px;
   scroll-behavior: smooth;
+}
+
+.app-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-title-group--help {
+  border: var(--border-color);
+  border-radius: 4px;
+  justify-self: flex-end;
 }
 
 ::-webkit-scrollbar {
@@ -92,9 +100,6 @@ main {
   width: 100%;
   max-width: var(--maxWidth);
   gap: 12px;
-}
-h1 {
-  align-self: baseline;
 }
 
 .search > form {
@@ -172,6 +177,7 @@ a:focus {
   word-wrap: break-word;
   max-width: 450px;
   color: var(--sub-text-color);
+  font-weight: var(--light);
 }
 
 .result-content-group {
@@ -216,4 +222,83 @@ a:focus {
 
 .tfidf {
   background-color: var(--highlight-alert);
+}
+
+dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  position: relative;
+  z-index: 1000;
+  width: 250px;
+  height: fit-content;
+  max-width: calc(100vw - 24px);
+  border-radius: 6px;
+  background-color: rgb(32, 33, 46);
+  border: var(--border-color);
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 4px 24px;
+  padding: 8px 20px 15px 20px;
+  font-weight: var(--light);
+}
+
+.dialog-title {
+  color: var(--text-color);
+  font-size: 0.9375rem;
+  font-style: normal;
+  font-weight: var(--medi);
+  line-height: 1.4375rem;
+  text-align: left;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dialog-content-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dialog-content-header {
+  color: var(--text-color);
+  font-size: 0.8125rem;
+}
+
+.dialog-content-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dialog-content-item--label {
+  color: rgb(156, 158, 172);
+  font-size: 0.8125rem;
+}
+
+.dialog-content-item--key {
+  text-align: left;
+  color: rgb(156, 158, 172);
+  font-size: 0.8125rem;
+  display: flex;
+  gap: 4px;
+  font-weight: var(--light);
+}
+
+kbd {
+  background-color: rgb(82, 85, 117);
+  padding: 4px 3px 4px 4px;
+  border-radius: 3px;
+  min-width: 20px;
+  display: inline-block;
+  vertical-align: baseline;
+  text-align: center;
+  text-transform: capitalize;
+  color: rgb(228, 229, 244);
+  font-size: 11px;
+  line-height: 110%;
+  font-feature-settings: "ss02";
+  font-weight: var(--light);
 }

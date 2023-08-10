@@ -2,7 +2,7 @@ const SearchEndpoint = "http://localhost:3000/search?q="
 const N = 78;
 const P = 80;
 const S = 83;
-const H = 72;
+const QE = 191; // ?
 
 function processFloat(float) {
   return float.toFixed(3);
@@ -21,6 +21,7 @@ class App {
   #inputHandle = document.getElementById("search");
   #contentHandle = document.getElementById("result-content");
   #bodyHandle = document.getElementById("app");
+  #mainHandle = document.getElementById("main");
 
   #content = undefined;
   #anchors = undefined;
@@ -79,11 +80,9 @@ class App {
       this.#inputHandle.focus();
     }
 
-    if (e.ctrlKey && e.keyCode === H) {
-      // TODO: Show help dialog
-      console.log("show help dialog");
+    if (document.activeElement !== this.#inputHandle && (e.shiftKey && e.keyCode === QE)) {
+      this.#renderDialog();
     }
-
   }
 
   #navigation(e) {
@@ -93,10 +92,10 @@ class App {
     if (e.ctrlKey && e.keyCode === N) {
       if (navigationStart) {
         this.#state.navigatedTo = 0;
-        this.#anchors[this.#state.navigatedTo].focus();
+        this.#focusResultAnchor();
       } else {
         this.#state.navigatedTo = (this.#state.navigatedTo + 1) % this.#anchors.length;
-        this.#anchors[this.#state.navigatedTo].focus();
+        this.#focusResultAnchor();
       }
     }
 
@@ -104,11 +103,16 @@ class App {
       if (navigationStart) {
         this.#state.navigatedTo = this.#anchors.length - 1;
         this.#anchors[this.#state.navigatedTo].focus();
+        this.#focusResultAnchor();
       } else {
         this.#state.navigatedTo = (this.#state.navigatedTo - 1 + this.#anchors.length) % this.#anchors.length;
-        this.#anchors[this.#state.navigatedTo].focus();
+        this.#focusResultAnchor();
       }
     }
+  }
+
+  #focusResultAnchor() {
+    this.#anchors.length && this.#anchors[this.#state.navigatedTo].focus();
   }
 
   #renderResultList(content) {
@@ -125,6 +129,17 @@ class App {
     }
 
     this.#contentHandle.appendChild(fragment.content);
+  }
+
+  #renderDialog() {
+    const helpMenu = document.getElementById("keyboard-shortcuts");
+    if (helpMenu) {
+      this.#mainHandle.removeChild(helpMenu);
+    } else {
+      const template = document.createElement("template")
+      template.innerHTML = this.#dialog();
+      this.#mainHandle.appendChild(template.content);
+    }
   }
 
   #resultCard(doc) {
@@ -150,6 +165,51 @@ class App {
         <span class="chip-kind ${kind}"></span>
         <span class="chip-text">${text}</span>
       </span>
+    `
+  }
+
+  #dialog() {
+    return `
+      <dialog id="keyboard-shortcuts">
+        <span class="dialog-title">
+          Keyboard Shortcuts
+        </span>
+        <ul class="dialog-content">
+          <div class="dialog-content-group">
+            <span class="dialog-content-header">Navigation</span>
+            <li class="dialog-content-item">
+              <span class="dialog-content-item--label">Next result</span>
+              <span class="dialog-content-item--key">
+                <kbd>ctrl</kbd>
+                <kbd>n</kbd>
+              </span>
+            </li>
+            <li class="dialog-content-item">
+              <span class="dialog-content-item--label">Previous result</span>
+              <span class="dialog-content-item--key">
+                <kbd>ctrl</kbd>
+                <kbd>p</kbd>
+              </span>
+            </li>
+          </div>
+          <div class="dialog-content-group">
+            <span class="dialog-content-header">Action</span>
+            <li class="dialog-content-item">
+              <span class="dialog-content-item--label">Focus search input</span>
+              <span class="dialog-content-item--key">
+                <kbd>ctrl</kbd>
+                <kbd>s</kbd>
+              </span>
+            </li>
+            <li class="dialog-content-item">
+              <span class="dialog-content-item--label">Open help center</span>
+              <span class="dialog-content-item--key">
+                <kbd>?</kbd>
+              </span>
+            </li>
+          </div>
+        </ul>
+      </dialog>
     `
   }
 
